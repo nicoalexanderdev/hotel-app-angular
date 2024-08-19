@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OnInit } from '@angular/core';
 import { ReservationService } from '../reservation/reservation.service';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Reservation } from '../models/reservation';
 
 @Component({
   selector: 'app-reservation-form',
@@ -13,7 +15,12 @@ export class ReservationFormComponent implements OnInit {
 
   reservationForm: FormGroup = new FormGroup({});
 
-  constructor(private formBuilder: FormBuilder, private reservationService: ReservationService) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private reservationService: ReservationService,
+    private router: Router,
+    private activatedRoute: ActivatedRoute
+  ) {
 
   }
 
@@ -25,12 +32,39 @@ export class ReservationFormComponent implements OnInit {
       guestEmail: ['', [Validators.required, Validators.email]],
       roomNumber: ['', Validators.required],
     })
+
+
+
+    /**
+     *  mostrar los datos en el html del componente si obtenemos el param id en el url 
+     *  usando activatedRoute 
+     */
+    let id = this.activatedRoute.snapshot.paramMap.get('id');
+
+    if (id) {
+      let reservation = this.reservationService.findById(id);
+
+      if (reservation) {
+        this.reservationForm.patchValue(reservation);
+      }
+    }
+
   }
 
   onSubmit() {
     if (this.reservationForm.valid) {
-      let reservation = this.reservationForm.value();
-      this.reservationService.save(reservation);
+      let reservation: Reservation = this.reservationForm.value;
+
+      let id = this.activatedRoute.snapshot.paramMap.get('id');
+
+      if (id) {
+        // update
+        this.reservationService.update(id, reservation);
+      } else {
+        // save
+        this.reservationService.save(reservation);
+      }
+      this.router.navigate(['/list'])
     }
   }
 }
